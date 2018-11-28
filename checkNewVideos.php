@@ -137,8 +137,10 @@ while ($channel = $channelList->fetch(PDO::FETCH_ASSOC)) {
         $video_url = $element->children(0)->children(1)->children(0)->children(1)->children(0)->href;
         $video_title = $element->children(0)->children(1)->children(0)->children(1)->children(0)->plaintext;
         $video_description = $element->children(0)->children(1)->children(0)->children(2)->children(0)->plaintext;
-        $messageText = "<b>$channel_name</b> - $video_title %0A%0A$video_description%0A%0Ahttps://www.bitchute.com$video_url";
+        $video_duration = $element->children(0)->children(0)->children(0)->children(0)->children(0)->children(5)->plaintext;
+        $messageText = "<b>$channel_name</b> - $video_title %0A%0A$video_description%0A%0Ahttps://www.bitchute.com$video_url $video_duration";
         $isNewUpload = addVideo($channel_id, $video_url, $dbConn);
+        
         
         if($isNewUpload) {
             notifyAllSubscriber($subscriberList, $messageText);
