@@ -51,8 +51,8 @@ function addChannelToSubscriptions($chat_id, $channel_url)
 function extractChannelName($channel_url)
 {
     $html = file_get_html($channel_url);
-    $pageBarContainer = $html->find('div.page-bar-container');
-    return $pageBarContainer[0]->children(0)->innertext;
+    $pageBarContainer = $html->find('div.details');
+    return $pageBarContainer[0]->children(0)->children(0)->innertext;
 }
 
 function extractChannelUrl($url)
@@ -61,8 +61,8 @@ function extractChannelUrl($url)
     if (preg_match('/(http)(s)*(:\/\/www.bitchute.com\/channel\/).*/', $url))
         $channel_url = $url;
     if (preg_match('/(http)(s)*(:\/\/www.bitchute.com\/video\/).*/', $url)) {
-        $html = file_get_html($url);
-        $videoAuthor = $html->find('p.video-author');
+		$html = file_get_html($url);
+        $videoAuthor = $html->find('p.name');
         $channel_url = "https://bitchute.com/" . $videoAuthor[0]->children(0)->href;
     }
     return $channel_url;
@@ -285,7 +285,7 @@ function sendInlineKeyboard($chat_id, $text, $inlineKeyboard)
 }
 function processMessage($message)
 {
-    // process incoming message
+	// process incoming message
     $text = $message['text'];
     $message_id = $message['message_id'];
     $chat_id = $message['chat']['id'];
