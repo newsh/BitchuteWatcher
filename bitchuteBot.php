@@ -45,7 +45,7 @@ function addChannelToSubscriptions($chat_id, $channel_url)
     $stmt = $db->prepare('INSERT INTO subscriptions (chat_id, channel_id) VALUES (:chat_id, :channel_id)');
     $stmt->bindParam(':channel_id', $channel_id);
     $stmt->bindParam(':chat_id', $chat_id);
-    $stmt->execute();
+    return $stmt->execute();
 }
 
 function extractChannelName($channel_url)
@@ -59,7 +59,7 @@ function extractChannelUrl($url)
 {
     $html = file_get_html($url);
     $videoAuthor = $html->find('p.name');
-    $channel_url = "https://bitchute.com" . $videoAuthor[0]->children(0)->href;
+    $channel_url = "https://www.bitchute.com" . $videoAuthor[0]->children(0)->href;
     return $channel_url;
 }
 
@@ -304,7 +304,6 @@ function processMessage($message)
             $inlineKeyboard = buildSubscriptionInlineKeyboard($chat_id, 1);
             if ($inlineKeyboard) {
                 sendInlineKeyboard($chat_id, "Select the channel you want to delete", $inlineKeyboard);
-                
             } else
                 sendMessage($chat_id, "No channels to delete!");
         } else {
@@ -312,8 +311,13 @@ function processMessage($message)
                 $channel_url = extractChannelUrl($text);
                 $channel_name = extractChannelName($channel_url);
                 $isNewChannel = addChannelToDatabase($channel_name, $channel_url);
-                addChannelToSubscriptions($chat_id, $channel_url);
-                sendMessage($chat_id, "Subscribed to <b>" . $channel_name . "</b>. You will be notified of new uploads.");
+                $isNewSub = addChannelToSubscriptions($chat_id, $channel_url);
+                
+                if($isNewSub) 
+                    sendMessage($chat_id, "Subscribed to <b>" . $channel_name . "</b>. You will be notified of new uploads.");
+                else
+                    sendMessage($chat_id, "You are already subscribed to <b>" . $channel_name . "</b>.");
+                    
                 if($isNewChannel)
                     addVideoUrls($channel_url);
                 
