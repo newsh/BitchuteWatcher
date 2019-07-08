@@ -57,14 +57,9 @@ function extractChannelName($channel_url)
 
 function extractChannelUrl($url)
 {
-    $channel_url = null;
-    if (preg_match('/(http)(s)*(:\/\/www.bitchute.com\/channel\/).*/', $url))
-        $channel_url = $url;
-    if (preg_match('/(http)(s)*(:\/\/www.bitchute.com\/video\/).*/', $url)) {
-		$html = file_get_html($url);
-        $videoAuthor = $html->find('p.name');
-        $channel_url = "https://bitchute.com/" . $videoAuthor[0]->children(0)->href;
-    }
+    $html = file_get_html($url);
+    $videoAuthor = $html->find('p.name');
+    $channel_url = "https://bitchute.com" . $videoAuthor[0]->children(0)->href;
     return $channel_url;
 }
 
@@ -287,7 +282,6 @@ function processMessage($message)
 {
 	// process incoming message
     $text = $message['text'];
-    $message_id = $message['message_id'];
     $chat_id = $message['chat']['id'];
 
     if (isset($message['reply_to_message']['text'])) { // when user responds to bot by force_reply initiated by bot. Field 'reply_to_message' is empty otherwise.
