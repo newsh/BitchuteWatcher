@@ -7,7 +7,7 @@ $update = json_decode($content, true);
 
 function isValidUrl($input)
 {
-    $isChannelUrl = preg_match('/(http)(s)*(:\/\/www.bitchute.com\/channel\/).*/', $input);
+    $isChannelUrl = preg_match('/(http)(s)*(:\/\/www.bitchute.com\/(channel\/)*).*/', $input);
     $isVideoUrl = preg_match('/(http)(s)*(:\/\/www.bitchute.com\/video\/).*/', $input);
     return ($isChannelUrl || $isVideoUrl) && get_headers($input)[0] == "HTTP/1.1 200 OK";
 }
