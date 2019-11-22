@@ -77,13 +77,14 @@ function apiRequest($method, $parameters)
     
     return exec_curl_request($handle);
 }
-function messageUser($chat_id, $text)
+function messageUser($chat_id, $text, $thumbUrl)
 {
-    apiRequest("sendMessage", array(
+    apiRequest("sendPhoto", array(
         'parse_mode' => 'HTML',
-        'disable_web_page_preview' => true,
+        //'disable_web_page_preview' => true,
         'chat_id' => $chat_id,
-        "text" => $text
+        'photo' => $thumbUrl,
+        "caption" => $text
     ));
 }
 function getChannelsVideoList($channel_url)
@@ -114,11 +115,19 @@ function getChannelList($dbConn)
     $result = $dbConn->query('SELECT channels.channel_id, channels.channel_url, channels.channel_name FROM bitchuteNotifier.subscriptions INNER JOIN channels ON channels.channel_id = subscriptions.channel_id GROUP BY channel_id');
     return $result;
 }
-function notifyAllSubscriber($subscriberList, $messageText) 
+function notifyAllSubscriber($subscriberList, $messageText, $photoUrl) 
 {
     foreach ($subscriberList as $subscriber) {
-        messageUser($subscriber['chat_id'], $messageText);
+        messageUser($subscriber['chat_id'], $messageText, $photoUrl);
     }
+}
+function get_string_between($string, $start, $end){
+    $string = " ".$string;
+    $ini = strpos($string,$start);
+    if ($ini == 0) return "";
+    $ini += strlen($start);
+    $len = strpos($string,$end,$ini) - $ini;
+    return substr($string,$ini,$len);
 }
 
 $dbConn = connectToDB();
@@ -131,19 +140,22 @@ while ($channel = $channelList->fetch(PDO::FETCH_ASSOC)) {
     
     $videoList = getChannelsVideoList($channel_url);
     $subscriberList = getSubscriberList($channel_id, $dbConn);
-    
+    echo "Checking {$channel_name}\r\n";
     foreach($videoList  as $element){
-        
+         
         $video_url = $element->children(0)->children(1)->children(0)->children(1)->children(0)->href;
         $video_title = $element->children(0)->children(1)->children(0)->children(1)->children(0)->plaintext;
         $video_description = $element->children(0)->children(1)->children(0)->children(2)->children(0)->plaintext;
         $video_duration = $element->children(0)->children(0)->children(0)->children(0)->children(0)->children(5)->plaintext;
-        $messageText = "<b>$channel_name</b> - $video_title %0A%0A$video_description%0A%0Ahttps://www.bitchute.com$video_url $video_duration";
+        $thumbUrl = get_string_between($element->children(0)->children(0)->children(0)->children(0)->children(0)->children(0), 'data-src="', '" onerror');
+        
+        $messageText = "<a href=\"$thumbUrl\">&#8204</a><b>$channel_name</b> - $video_title %0A%0A$video_description%0A%0Ahttps://www.bitchute.com$video_url $video_duration";
         $isNewUpload = addVideo($channel_id, $video_url, $dbConn);
         
+        //echo $element->children(0)->children(0)->children(0)->children(0)->children(0)->children(0); //How to get video thumb url from this?
         
         if($isNewUpload) {
-            notifyAllSubscriber($subscriberList, $messageText);
+            notifyAllSubscriber($subscriberList, $messageText, $thumbUrl);
         }
     }
 }
