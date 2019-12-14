@@ -52,7 +52,10 @@ function extractChannelName($channel_url)
 {
     $html = file_get_html($channel_url);
     $pageBarContainer = $html->find('div.details');
-    return $pageBarContainer[0]->children(0)->children(0)->innertext;
+    $channelName = $pageBarContainer[0]->children(0)->children(0)->innertext;
+    if((strpos($channelName, 'email&#160;protected') !== false))
+        $channelName = substr($pageBarContainer[0]->children(0)->children(0)->href,9,-1);//->children(0)->innertext;
+    return $channelName;
 }
 
 function extractChannelUrl($url)
