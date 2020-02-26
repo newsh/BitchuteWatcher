@@ -90,6 +90,7 @@ function messageUser($chat_id, $text, $thumbUrl)
 function getChannelsVideoList($channel_url)
 {
     $html = file_get_html($channel_url);
+    if($html == false) return null;
     $videoList = $html->find('div.channel-videos-container');
     return $videoList;
 }
@@ -139,6 +140,7 @@ while ($channel = $channelList->fetch(PDO::FETCH_ASSOC)) {
     $channel_name = $channel['channel_name'];
     
     $videoList = getChannelsVideoList($channel_url);
+    if($videoList == null) continue;
     $subscriberList = getSubscriberList($channel_id, $dbConn);
     echo "Checking {$channel_name}\r\n";
     foreach($videoList  as $element){
