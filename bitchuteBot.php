@@ -5,6 +5,13 @@ include 'config.php';
 $content = file_get_contents("php://input");
 $update = json_decode($content, true);
 
+function contentIsBlockedInCountry($url) {
+    $html = file_get_html($url);
+    $divElement = $html->find('div[id=page-detail]');
+    $detailtext = $divElement[0]->children(0)->children(0)->innertext;
+    return preg_match("/This (video|channel) is unavailable as the contents have been deemed illegal by the authorities within your country./", $detailtext);
+    
+}
 function isValidUrl($input)
 {
     $isChannelUrl = preg_match('/(http)(s)*(:\/\/www.bitchute.com\/(channel\/)*).*/', $input);
@@ -310,7 +317,9 @@ function processMessage($message)
             } else
                 sendMessage($chat_id, "No channels to delete!");
         } else {
-            if (isValidUrl($text)) {
+            if(contentIsBlockedInCountry($text))
+                sendMessage($chat_id, "This video/channel is unavailable for the bot's country of origin.");
+            else if (isValidUrl($text)) {
                 $channel_url = extractChannelUrl($text);
                 $channel_name = extractChannelName($channel_url);
                 $isNewChannel = addChannelToDatabase($channel_name, $channel_url);
@@ -323,9 +332,9 @@ function processMessage($message)
                     
                 if($isNewChannel)
                     addVideoUrls($channel_url);
-                
-            } else
-                sendMessage($chat_id, "Could not find channel. Please check if url is correct.");
+            } 
+              else 
+                sendMessage($chat_id, "Could not find channel. Please check if url is correct.");;
         }
     } else { // user sends anything but text msg
              // ("sendMessage", array('chat_id' => $chat_id, "text" => 'I only read text messages, sorry!'));
