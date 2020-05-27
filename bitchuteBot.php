@@ -4,18 +4,26 @@ include 'config.php';
 
 $content = file_get_contents("php://input");
 $update = json_decode($content, true);
-
 function contentIsBlockedInCountry($url) {
+    if(!isValidUrl($url)) return false;
     $html = file_get_html($url);
     $divElement = $html->find('div[id=page-detail]');
-    $detailtext = $divElement[0]->children(0)->children(0)->innertext;
+    if($divElement != null)
+        $detailtext = $divElement[0]->children(0)->children(0)->innertext;
     return preg_match("/This (video|channel) is unavailable as the contents have been deemed illegal by the authorities within your country./", $detailtext);
     
 }
 function isValidUrl($input)
 {
-    $isChannelUrl = preg_match('/(http)(s)*(:\/\/www.bitchute.com\/(channel\/)*).*/', $input);
     $isVideoUrl = preg_match('/(http)(s)*(:\/\/www.bitchute.com\/video\/).*/', $input);
+    $isChannelUrl = preg_match('/(http)(s)*(:\/\/www.bitchute.com\/(channel\/)*).*/', $input);
+    //channel urls can look like this https://www.bitchute.com/channel/AbCdEfG/ but may also
+    //miss 'channel' part: https://www.bitchute.com/AbcdEfG/
+    //In case it is missing it will be added. This will simplify checking for valid urls. 
+    if($isChannelUrl && !preg_match('/(http)(s)*(:\/\/www.bitchute.com\/channel\/).*/', $input)) {
+        $input = str_replace("https://www.bitchute.com/","https://www.bitchute.com/channel/",$input);
+    }
+    
     return ($isChannelUrl || $isVideoUrl) && get_headers($input)[0] == "HTTP/1.1 200 OK";
 }
 
@@ -317,8 +325,9 @@ function processMessage($message)
             } else
                 sendMessage($chat_id, "No channels to delete!");
         } else {
-            if(contentIsBlockedInCountry($text))
+            if(contentIsBlockedInCountry($text)) {
                 sendMessage($chat_id, "This video/channel is unavailable for the bot's country of origin.");
+            }
             else if (isValidUrl($text)) {
                 $channel_url = extractChannelUrl($text);
                 $channel_name = extractChannelName($channel_url);
@@ -333,7 +342,7 @@ function processMessage($message)
                 if($isNewChannel)
                     addVideoUrls($channel_url);
             } 
-              else 
+            else 
                 sendMessage($chat_id, "Could not find channel. Please check if url is correct.");;
         }
     } else { // user sends anything but text msg
