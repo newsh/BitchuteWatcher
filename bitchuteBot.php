@@ -4,6 +4,7 @@ include 'config.php';
 
 $content = file_get_contents("php://input");
 $update = json_decode($content, true);
+
 function contentIsBlockedInCountry($url) {
     if(!isValidUrl($url)) return false;
     $html = file_get_html($url);
@@ -15,16 +16,15 @@ function contentIsBlockedInCountry($url) {
 }
 function isValidUrl($input)
 {
-    $isVideoUrl = preg_match('/(http)(s)*(:\/\/www.bitchute.com\/video\/).*/', $input);
-    $isChannelUrl = preg_match('/(http)(s)*(:\/\/www.bitchute.com\/(channel\/)*).*/', $input);
-    //channel urls can look like this https://www.bitchute.com/channel/AbCdEfG/ but may also
-    //miss 'channel' part: https://www.bitchute.com/AbcdEfG/
-    //In case it is missing it will be added. This will simplify checking for valid urls. 
-    if($isChannelUrl && !preg_match('/(http)(s)*(:\/\/www.bitchute.com\/channel\/).*/', $input)) {
-        $input = str_replace("https://www.bitchute.com/","https://www.bitchute.com/channel/",$input);
-    }
+    if (!filter_var($input, FILTER_VALIDATE_URL) || get_headers($input)[0] == "HTTP/1.1 404 Not Found") return false; 
     
-    return ($isChannelUrl || $isVideoUrl) && get_headers($input)[0] == "HTTP/1.1 200 OK";
+    $isBitchuteUrl = preg_match('/(http)(s)*(:\/\/www.bitchute.com\/).*/', $input);
+    
+    $html = file_get_html($input);
+    $nameParagraph = $html->find('p.name');
+    $hasNameParagraph = (sizeof($nameParagraph) > 0) ? true: false;
+
+    return $isBitchuteUrl && $hasNameParagraph;
 }
 
 function connectToDB()
